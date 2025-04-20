@@ -55,7 +55,56 @@ export const register = async (req, res) => {
     }
 }
 
-export const login = async (req, res) => {}
+export const login = async (req, res) => {
+    const {email ,password} = req.body;
+    try {
+        const user = await db.user.findUnique({
+            where: {
+                email
+            }
+        });
+
+        if (!user) {
+            return res.status(401).json({ 
+                message: "user not found" 
+            });
+        }
+        // Check if the password is correct
+        const isMatch = await bcyrptjs.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ 
+                message: "Invalid credentials" 
+            });
+        }
+        // Generate a JWT token and send it in the response
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+            expiresIn: "7d"
+        });
+        // Set the token in a cookie
+        res.cookie ("jwt", token, {
+            httpOnly: true, 
+            secure: process.env.NODE_ENV !== "development",
+            maxAge: 7 * 24 * 60 * 60 * 1000         // 7 days   
+        })
+        // Send the user data in the response
+        res.status(200).json({
+            success: true,
+            message: "User logged in successfully",
+            user:{
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            message: "Internal server error" 
+        });
+    }
+}
 
 export const logout = async (req, res) => {}
 
