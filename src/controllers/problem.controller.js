@@ -1,51 +1,52 @@
-import {db} from  '../libs/db.js';
+import { db } from '../libs/db.js';
 import { getJugde0LanguageId, pollBatchResults, submitBatch } from '../libs/judge0.lib.js';
 
 
 export const createProblem = async (req, res) => {
     //get all the data from the request body
-    const { title, description, difficulty, constraints, testcases , codeSnippets, examples, tags , referenceSolution } = req.body;
-    
+    const { title, description, difficulty, constraints, testCases, codeSnippets, examples, tags, referenceSolution } = req.body;
+
     //check users role again
     if (req.user.role !== 'ADMIN') {
         return res.status(403).json({ error: 'You are not authorized to create a problem' });
     }
     //loop through each and every solution
     try {
-        for(const [language , solutionCode ] of Object.entries(referenceSolution)){
+        for (const [language, solutionCode] of Object.entries(referenceSolution)) {
 
             const languageId = getJugde0LanguageId(language);
             if (!languageId) {
                 return res.status(400).json({ error: `Language ${language} is not supported` });
             }
 
-            const submission = testcases().map(( {input ,output}) => ({
+            const submission = testCases.map(({ input, output }) => ({
                 source_code: solutionCode,
                 language_id: languageId,
-                stdin : input,
+                stdin: input,
                 expected_output: output
             }))
 
             const submissionResults = await submitBatch(submission);
 
-            const tokens = submissionResults.map((res) =>res.token);
+            const tokens = submissionResults.map((res) => res.token);
             const results = await pollBatchResults(tokens);
 
 
-            for(let i=0;i<results.length;i++){
+            for (let i = 0; i < results.length; i++) {
                 const result = results[i];
-                if(result.status.id !== 3){
-                    return res.status(400).json({ error: `Test case ${i+1} failed for language ${language}` });
+                console.log("Result: \n", result);
+                if (result.status.id !== 3) {
+                    return res.status(400).json({ error: `Test case ${i + 1} failed for language ${language}` });
                 }
             }
             //save the data in the database
             const newProblem = await db.problem.create({
-                data :{
+                data: {
                     title,
                     description,
                     difficulty,
                     constraints,
-                    testcases,
+                    testCases,
                     codeSnippets,
                     examples,
                     tags,
@@ -56,16 +57,164 @@ export const createProblem = async (req, res) => {
             return res.status(201).json({ message: 'Problem created successfully', problem: newProblem });
         }
     } catch (error) {
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({
+            // error: 'Error while creating the problem'
+            error
+        });
     }
 }
 
-export const getAllProblems = async (req, res) => {}
+export const getAllProblems = async (req, res) => {
+    try {
+        const problems = await db.problem.findMany();
+        if (!problems) {
+            return res.status(404).json({
+                error: 'No problems found'
+            })
+        }
 
-export const getProblemById = async (req, res) => {}
+        res.status(200).json({
+            success: true,
+            message: "Messages fetched successfully",
+            problem: problems
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            error: 'While fetching problems an error occurred',
+        });
+    }
+}
 
-export const updateProblemById = async (req, res) => {}
+export const getProblemById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const problem = await db.problem.findUnique(
+            {
+                where: {
+                    id
+                },
+            }
+        )
+        if (!problem) {
+            return res.status(404).json({ error: 'Problem not found' });
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Problem fetched successfully',
+            problem
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            error: 'Error while fetching the problem'
+        })
+    }
+}
 
-export const deleteProblem = async (req, res) => {}
+export const updateProblemById = async (req, res) => {
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).json({ error: 'Problem ID is required' });
+    }
 
-export const getAllProblemsSolvedByUser = async (req, res) => {}
+    const { title, description, difficulty, constraints, testCases, codeSnippets, examples, tags, referenceSolution } = req.body;
+
+    //check users role again
+    if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'You are not authorized to create a problem' });
+    }
+    //loop through each and every solution
+    try {
+        let newProblem;
+        for (const [language, solutionCode] of Object.entries(referenceSolution)) {
+
+            const languageId = getJugde0LanguageId(language);
+            if (!languageId) {
+                return res.status(400).json({ error: `Language ${language} is not supported` });
+            }
+
+            const submission = testCases.map(({ input, output }) => ({
+                source_code: solutionCode,
+                language_id: languageId,
+                stdin: input,
+                expected_output: output
+            }))
+
+            const submissionResults = await submitBatch(submission);
+
+            const tokens = submissionResults.map((res) => res.token);
+            const results = await pollBatchResults(tokens);
+
+            for (let i = 0; i < results.length; i++) {
+                const result = results[i];
+                console.log("Result: \n", result);
+                if (result.status.id !== 3) {
+                    return res.status(400).json({ error: `Test case ${i + 1} failed for language ${language}` });
+                }
+            }
+            //save the data in the database
+            const newProblem = await db.problem.update({
+                where: {
+                    id
+                },
+                data: {
+                    title,
+                    description,
+                    difficulty,
+                    constraints,
+                    testCases,
+                    codeSnippets,
+                    examples,
+                    tags,
+                    referenceSolution,
+                    userId: req.user.id
+                }
+            });
+        }
+        return res.status(201).json({ message: 'Problem updated successfully', newProblem });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            error: 'Error while updating the problem'
+        });
+    }
+}
+
+export const deleteProblem = async (req, res) => {
+    const { id } = req.params;
+    if (!id) {
+        return res.status(404).json({ error: 'Problem ID is required' });
+    }
+
+    //check if the user is admin
+    if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'You are not authorized to delete a problem' });
+    }
+
+    try {
+        await db.problem.delete({
+            where: {
+                id
+            }
+        });
+        return res.status(200).json({ message: 'Problem deleted successfully' });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: 'Error while deleting the problem' });
+    }
+}
+
+export const getAllProblemsSolvedByUser = async (req, res) => {
+    const { id } = req.user;
+    // try {
+    //     const problems = await db.problem.findMany({
+    //         where: {
+    //             id
+
+    //         });
+    // } catch (error) {
+
+    // }
+
+}
