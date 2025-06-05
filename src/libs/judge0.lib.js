@@ -11,6 +11,9 @@ export const getJugde0LanguageId = (language) => {
     return languageMap[language.toUpperCase()];
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+
 //hits the judge0 endpoint to submit the batch of submissions
 export const submitBatch = async (submissions) => {
 
@@ -22,7 +25,6 @@ export const submitBatch = async (submissions) => {
 }
 
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export const pollBatchResults = async (tokens) => {
     while(true){
         const {data} = await axios.get(`${process.env.JUDGE0_API_URL}/submissions/batch`,{
@@ -42,3 +44,15 @@ export const pollBatchResults = async (tokens) => {
         await sleep(1000);
     }
 };
+
+
+export const getLanguageName = (languageId) => {
+    const languageMap = {
+        71: "PYTHON",
+        50: "C",
+        54: "C++",
+        62: "JAVA",
+        63: "JAVASCRIPT"
+    }
+    return languageMap[languageId];
+}
