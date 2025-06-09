@@ -1,4 +1,6 @@
-import expresss from 'express';
+import express from 'express';
+import cors from "cors";
+import morgan from "morgan";
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 
@@ -10,10 +12,18 @@ import playlistRoutes from './routes/playlist.routes.js';
 
 dotenv.config();
 
-const app = expresss();
-app.use(expresss.json());
-app.use(cookieParser());
+const app = express();
 
+
+app.use(
+    cors({
+      origin: "http://localhost:5173",
+      credentials: true,
+    })
+  );
+app.use(morgan("dev"));
+app.use(express.json());
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
     res.send('Hello Guys! Welcome to leetlab🔥');
