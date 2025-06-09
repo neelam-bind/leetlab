@@ -16,7 +16,7 @@ const app = express();
 
 
 app.use(
-    cors({
+    cors('*',{
       origin: ["http://localhost:5173","https://leetlab-frontend-ebon.vercel.app"],
       credentials: true,
     })

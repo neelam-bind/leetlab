@@ -1,6 +1,6 @@
 import bcyrptjs from "bcryptjs";
 import { db } from "../libs/db.js";
-import { Prisma, UserRole } from "../generated/prisma/index.js";
+import {  UserRole } from "../generated/prisma/index.js";
 import jwt from "jsonwebtoken";
 
 
@@ -86,7 +86,7 @@ export const login = async (req, res) => {
             httpOnly: true, 
             secure: process.env.NODE_ENV !== "development",
             sameSite: "None",
-            maxAge: 7 * 24 * 60 * 60 * 1000         // 7 days   
+            maxAge: 7 * 24 * 60 * 60 * 1000        
         })
         // Send the user data in the response
         res.status(200).json({
