@@ -35,6 +35,8 @@ app.use('/api/v1/execute-code',executionRoutes);
 app.use('/api/v1/submissions',submissionRoutes);
 app.use('/api/v1/playlist',playlistRoutes);
 
-app.listen(process.env.PORT , () => {
-    console.log('server is running on port 8080');
-})
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
