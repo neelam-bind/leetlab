@@ -40,7 +40,7 @@ export const createProblem = async (req, res) => {
                 }
             }
             //save the data in the database
-            const newProblem = await db.problem.create({
+            const newProblem = await db.Problem.create({
                 data: {
                     title,
                     description,
@@ -66,7 +66,7 @@ export const createProblem = async (req, res) => {
 
 export const getAllProblems = async (req, res) => {
     try {
-        const problems = await db.problem.findMany();
+        const problems = await db.Problem.findMany();
         if (!problems) {
             return res.status(404).json({
                 error: 'No problems found'
@@ -89,7 +89,7 @@ export const getAllProblems = async (req, res) => {
 export const getProblemById = async (req, res) => {
     const { id } = req.params;
     try {
-        const problem = await db.problem.findUnique(
+        const problem = await db.Problem.findUnique(
             {
                 where: {
                     id
@@ -154,7 +154,7 @@ export const updateProblemById = async (req, res) => {
                 }
             }
             //save the data in the database
-            const newProblem = await db.problem.update({
+            const newProblem = await db.Problem.update({
                 where: {
                     id
                 },
@@ -193,7 +193,7 @@ export const deleteProblem = async (req, res) => {
     }
 
     try {
-        await db.problem.delete({
+        await db.Problem.delete({
             where: {
                 id
             }
@@ -208,7 +208,7 @@ export const deleteProblem = async (req, res) => {
 export const getAllProblemsSolvedByUser = async (req, res) => {
     const { id } = req.user;
     try {
-        const problems = await db.problem.findMany({
+        const problems = await db.Problem.findMany({
             where: {
                 problemSolved: {
                     some: {
