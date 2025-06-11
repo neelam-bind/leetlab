@@ -2,11 +2,11 @@ import axios from "axios";
 
 export const getJugde0LanguageId = (language) => {
     const languageMap = {
-        "PYTHON":  71 ,
-        "C": 50,
-        "C++": 54,
+        "PYTHON": 71,
+        "JAVASCRIPT": 63,
         "JAVA": 62,
-        "JAVASCRIPT": 63
+        "CPP": 54,
+        "GO": 60,
     }
     return languageMap[language.toUpperCase()];
 }
@@ -15,14 +15,15 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 
 //hits the judge0 endpoint to submit the batch of submissions
-export const submitBatch = async (submissions) => {
-
-    const {data} = await axios.post(`${process.env.JUDGE0_API_URL}/submissions/batch?base64_encoded=false`, {
-        submissions
-    })
-    console.log("Batch submission response: ", data);
-    return data;
+export async function submitBatch(submissions) {
+  const { data } = await axios.post(
+    `${process.env.JUDGE0_API_URL}/submissions/batch?base64_encoded=false`,
+    { submissions }
+  );
+  return data;
 }
+
+
 
 
 export const pollBatchResults = async (tokens) => {
@@ -41,18 +42,20 @@ export const pollBatchResults = async (tokens) => {
         if(allDone){
             return results;
         }
+
         await sleep(1000);
     }
 };
 
 
-export const getLanguageName = (languageId) => {
-    const languageMap = {
-        71: "PYTHON",
-        50: "C",
-        54: "C++",
-        62: "JAVA",
-        63: "JAVASCRIPT"
-    }
-    return languageMap[languageId];
+export function getLanguageName(languageId) {
+    const LANGUAGE_NAMES = {
+      74: "TypeScript",
+      63: "JavaScript",
+      71: "Python",
+      62: "Java",
+      54: "C++",
+      60: "Go"
+    };
+    return LANGUAGE_NAMES[languageId] || "Unknown";
 }

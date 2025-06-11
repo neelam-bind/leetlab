@@ -5,19 +5,26 @@ import { getJugde0LanguageId, pollBatchResults, submitBatch } from '../libs/judg
 export const createProblem = async (req, res) => {
     //get all the data from the request body
     const { title, description, difficulty, constraints, testCases, codeSnippets, examples, tags, referenceSolution } = req.body;
-
+    
     //check users role again
     if (req.user.role !== 'ADMIN') {
         return res.status(403).json({ error: 'You are not authorized to create a problem' });
     }
+    
+    if (!referenceSolution || typeof referenceSolution !== 'object') {
+    console.error("Invalid referenceSolution:", referenceSolution);
+    return res.status(400).json({ error: 'referenceSolution must be a valid object' });
+}
     //loop through each and every solution
     try {
         for (const [language, solutionCode] of Object.entries(referenceSolution)) {
-
+            console.log("referenceSolution")
             const languageId = getJugde0LanguageId(language);
-            if (!languageId) {
-                return res.status(400).json({ error: `Language ${language} is not supported` });
-            }
+
+            console.log("Language:", language);
+            console.log("Language ID:", languageId);
+
+
 
             const submission = testCases.map(({ input, output }) => ({
                 source_code: solutionCode,
@@ -25,20 +32,23 @@ export const createProblem = async (req, res) => {
                 stdin: input,
                 expected_output: output
             }))
-
+            
+            
             const submissionResults = await submitBatch(submission);
 
             const tokens = submissionResults.map((res) => res.token);
             const results = await pollBatchResults(tokens);
 
-
             for (let i = 0; i < results.length; i++) {
                 const result = results[i];
+
                 console.log("Result: \n", result);
                 if (result.status.id !== 3) {
                     return res.status(400).json({ error: `Test case ${i + 1} failed for language ${language}` });
                 }
             }
+            
+            console.log('till here')
             //save the data in the database
             const newProblem = await db.Problem.create({
                 data: {
@@ -59,8 +69,7 @@ export const createProblem = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             // error: 'Error while creating the problem'
-            error
-        });
+            error: error.message });
     }
 }
 

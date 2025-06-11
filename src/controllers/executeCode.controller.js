@@ -23,6 +23,7 @@ export const executeCode = async (req, res) => {
             stdin: input
         }))
         
+console.log("Prepared Submissions:", submissions); 
         //3. Send batch of submission to judge0
         const submissionResponse = await submitBatch(submissions);
         const tokens = submissionResponse.map((submission) => submission.token);
@@ -80,7 +81,7 @@ export const executeCode = async (req, res) => {
         });
         //if all passed =true , mark the problem as current user 
         if(allPassed){
-            await db.problemSolved.upsert({
+            await db.ProblemSolved.upsert({
                 where:{
                     userId_problemId:{
                         userId,
